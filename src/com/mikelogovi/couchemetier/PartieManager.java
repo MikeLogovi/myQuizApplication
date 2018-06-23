@@ -25,6 +25,7 @@ public class PartieManager implements IPartieManager{
 				prepareStatement.setString(3, played.getQuiz().getType().toString());
 				prepareStatement.setInt(4, played.getQuiz().getIdQuiz());
 				prepareStatement.setInt(5, joueur.getScorePartie());
+				prepareStatement.execute();
 			}
 		}catch(SQLException e) {
 			e.printStackTrace();

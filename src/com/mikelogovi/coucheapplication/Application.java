@@ -1,36 +1,28 @@
 package com.mikelogovi.coucheapplication;
 import java.awt.BorderLayout;
-import com.mikelogovi.couchemetier.*;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import com.mikelogovi.coucheapplication.Constante;
-
-import javax.imageio.ImageIO;
+import java.util.Random;
+import javax.swing.Timer;
+import java.util.TimerTask;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -38,11 +30,18 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JWindow;
-import javax.swing.Timer;
+
+import com.mikelogovi.couchemetier.Joueur;
+import com.mikelogovi.couchemetier.JoueurManager;
+import com.mikelogovi.couchemetier.Partie;
+import com.mikelogovi.couchemetier.PartieManager;
+import com.mikelogovi.couchemetier.Quiz;
+import com.mikelogovi.couchemetier.QuizManager;
+import com.mikelogovi.couchemetier.TypePartie;
+import com.mikelogovi.couchemetier.TypeQuiz;
 public class Application extends JWindow{
 	    private Musique musique = new Musique(); 
         JProgressBar jpgb = new JProgressBar();
@@ -54,14 +53,27 @@ public class Application extends JWindow{
         JFrame gamePresentation = new JFrame();
         JFrame choosePresentation = new JFrame();
         JFrame quizInterface = new JFrame();
+        JFrame startOrNot = new JFrame();
+        JFrame afterGaming = new JFrame();
         JTextField utilisateur = new JTextField("",10);
         JPasswordField motpass = new JPasswordField();
+        
+
         private Partie partie = new Partie();
         private PartieManager partieManager = new PartieManager(); 
         private Joueur joueur = new Joueur();
         private JoueurManager joueurManager= new JoueurManager();
         private Quiz quiz = new Quiz();
+        private QuizManager quizManager = new QuizManager();
         private Gaming[] game= {Gaming.NOUVELLE_PARTIE,Gaming.CONTINUER_PARTIE,Gaming.CLASSEMENTS,Gaming.STATISTIQUES,Gaming.QUITTER};
+        private AfterGaming[] afterGamingButtons= {AfterGaming.REJOUER,AfterGaming.MENU_PRINCIPAL,AfterGaming.QUITTER};
+        private HashMap<String,String>questionnaire=new HashMap<String,String>();
+        private Random rd = new Random();
+        private int scoreGame=0;
+        private String stockQuestion;
+        private int verScore=-1;
+        private int timeCount;
+        private long timeStartGame;
         public Application() {
         	this.setSize(361,267);
         	this.setLocationRelativeTo(null);
@@ -211,7 +223,22 @@ public class Application extends JWindow{
 			JPanel middlePanel =  customizeJPanel(new GridLayout(5,1,20,20),new Color(255,200,18));
 			for(Gaming gamePlay:game) {
 				JButton choice = new JButton(gamePlay.toString());
-				 middlePanel.add(choice);
+				choice.setFont(new Font("Verdana",Font.BOLD,20));
+				choice.setBackground(new Color(255,255,255));
+				choice.addMouseListener(new MouseAdapter() {
+					
+					@Override
+					public void mouseEntered(MouseEvent arg0) {
+						choice.setBackground(new Color(0,255,0));
+						choice.setForeground(new Color(255,255,255));
+					}
+					@Override
+					public void mouseExited(MouseEvent arg0) {
+						 choice.setBackground(new Color(255,255,255));
+						 choice.setForeground(new Color(0,0,0));			 
+					}
+				});
+				middlePanel.add(choice);
 				bouton.put(gamePlay,choice);
 			}
 		    /*
@@ -219,7 +246,6 @@ public class Application extends JWindow{
 			JLabel topAnim2 = new JLabel(new ImageIcon("src/com/mikelogovi/images/gif.gif"));
 			JLabel topAnim3 = new JLabel(new ImageIcon("src/com/mikelogovi/images/gif.gif"));
 			*/
-	
 			/*topPanel.add(topAnim1,BorderLayout.WEST);
 			topPanel.add(topAnim2,BorderLayout.EAST);*/
 			panelContainer.add(topPanel,BorderLayout.NORTH);
@@ -227,23 +253,6 @@ public class Application extends JWindow{
 			gamePresentation.add(panelContainer);
 			gamePresentation.setVisible(true);
 			//EVENEMENTS
-			for(JButton button:bouton.values()) {
-				button.setFont(new Font("Verdana",Font.BOLD,20));
-				button.setBackground(new Color(255,255,255));
-				button.addMouseListener(new MouseAdapter() {
-					
-					@Override
-					public void mouseEntered(MouseEvent arg0) {
-						button.setBackground(new Color(0,255,0));
-						button.setForeground(new Color(255,255,255));
-					}
-					@Override
-					public void mouseExited(MouseEvent arg0) {
-						 button.setBackground(new Color(255,255,255));
-						 button.setForeground(new Color(0,0,0));			 
-					}
-				});
-			}
 			gamePresentation.addWindowListener(new WindowAdapter() {
 				@SuppressWarnings("deprecation")
 				@Override
@@ -330,7 +339,7 @@ public class Application extends JWindow{
 					}	
 		    	});
 		    }
-		    myBtn.get(TypePartie.SOLO).addActionListener(this::createSoloQuiz);
+		    myBtn.get(TypePartie.SOLO).addActionListener((event)->createSoloQuiz(choosePresentation));
 		    choosePresentation.setVisible(true);
 		}
 		private JPanel createGameTopPanel(String title) {
@@ -341,86 +350,24 @@ public class Application extends JWindow{
 			return topPanel;
 		}
 		
-		private void createSoloQuiz(ActionEvent e) {
+		private void createSoloQuiz(JFrame frame) {
+			frame.dispose();
+            gamePresentation.dispose();
 			partie.setTypePartie(TypePartie.SOLO);
-			switch(quiz.getType()) {
-			case MATH:generateMathQuiz();
-			     break;
-			case CULTURE_GENERAL:generateGeneralCultureQuiz();
-			     break;
-			case PAYS_CAPITAL:generatePaysCapitalQuiz();
-			    break;
-			default:jp.showMessageDialog(choosePresentation, "Veillez choisir un mode de jeu");
-			}
+			String title="Quiz-"+quiz.getType().toString()+"-"+partie.getTypePartie().toString();
+			doYouWantToStartGame(title);
 		}
-		private void  generateMathQuiz() {
-			customizeFrame(quizInterface,"Quiz-Math-Solo",600,400,FrameClosing.DISPOSE);
-			JMenuBar menuBar = new JMenuBar();
-			JMenu menu = new JMenu("Jeu");
-			for(Gaming name:game) {
-				JMenuItem item = new JMenuItem(name.toString());
-				menu.add(item);
-			}
-			menuBar.add(menu);
-			quizInterface.setJMenuBar(menuBar);
-			JPanel panelContainer=customizeJPanel(new BorderLayout(),null);
-			JPanel topPanel =createGameTopPanel("QUIZ - MATH");
-			panelContainer.add(topPanel,BorderLayout.NORTH);
-			JPanel  middlePanel = customizeJPanel(new BorderLayout(),null);
-			JPanel mainPanel = customizeJPanel(new BorderLayout(),Color.WHITE);
-			JPanel timerPanel = customizeJPanel(new BorderLayout(),new Color(253,151,31));
-			JPanel panCounterName = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(253,151,31));
-			JLabel counterName = customizeJLabel("Temps restant",new Font("URW Bookman L",Font.BOLD,20),new Color(255,255,0));
-			JLabel counter = customizeJLabel("10s",new Font("URW Bookman L",Font.BOLD,15),new Color(255,0,0));
-			JPanel panCounter = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(253,151,31));
-			panCounterName.add(counterName);
-			panCounterName.add(counterName);
-			panCounter.add(counter);
-			timerPanel.add(panCounterName,BorderLayout.NORTH);
-			timerPanel.add(panCounter,BorderLayout.CENTER);
-			JPanel mainPanelNorth = customizeJPanel(new FlowLayout(FlowLayout.CENTER,10,10),Color.WHITE);
-			JPanel mainPanelSouth =customizeJPanel(new GridLayout(1,2),null);
-			JPanel mainPanelCenter = new JPanel();
-			mainPanelCenter.setBackground(Color.WHITE);
-			
-			JLabel question =customizeJLabel("Qui est le fils d'Hitler?\nA-Mike\nB-Kodjo\n C-AFI",new Font("Garuda",Font.BOLD,15),Color.BLUE);
-			mainPanelCenter.add(question);
-			//JScrollPane jscrp =new JScrollPane(mainPanelCenter);
-			JLabel nomQuestion = customizeJLabel("Question",new Font("Unbuntu",Font.BOLD,24),Color.BLUE);
-			JLabel numQuestion = customizeJLabel("1",new Font("Unbuntu",Font.BOLD,24),Color.BLUE);
-			mainPanelNorth.add(nomQuestion);
-			mainPanelNorth.add(numQuestion);
-			JTextField textField = new JTextField();
-			JButton valider = customizeButton("Valider",new Dimension(100,35),new Font("Verdana",Font.BOLD,10),new Color(253,151,31),Color.white);
-			textField.setPreferredSize(new Dimension(250,35));
-			textField.setBackground(new Color(250,250,250));
-			mainPanelSouth.add(textField);
-			mainPanelSouth.add(valider);
-			mainPanel.add(mainPanelNorth,BorderLayout.NORTH);
-			mainPanel.add(mainPanelCenter,BorderLayout.CENTER);
-			mainPanel.add(mainPanelSouth,BorderLayout.SOUTH);
-			middlePanel.add(timerPanel,BorderLayout.WEST);
-			middlePanel.add(mainPanel,BorderLayout.CENTER);
-			JPanel scorePanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER,10,10),new Color(253,151,31));
-			JLabel scoreName = customizeJLabel("Score: ",new Font("URW Bookman L",Font.BOLD,30),new Color(0,255,0));
-			JLabel score = customizeJLabel("0",new Font("URW Bookman L",Font.BOLD,30),new Color(128,255,128));
-			scorePanel.add(scoreName);
-			scorePanel.add(score);
-			panelContainer.add(middlePanel,BorderLayout.CENTER);
-			panelContainer.add(scorePanel,BorderLayout.SOUTH);
-			
-			//JSplitPane split1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,timerPanel,mainPanel);
-			//JSplitPane split2 = new JSplitPane(JSplitPane.VERTICAL_SPLIT,split1,scorePanel);
-			//panelContainer.add(split1);
-			//panelContainer.add(split2);
-			quizInterface.add(panelContainer);
-			quizInterface.setVisible(true);
+		private void  generateMathQuiz(String title) {
+		    questionnaire=quizManager.readQuestionnaire(TypeQuiz.MATH);
+		    generateGameProperInterface(title);
 		}
-		private void generateGeneralCultureQuiz() {
-			
+		private void generateGeneralCultureQuiz(String title) {
+			questionnaire=quizManager.readQuestionnaire(TypeQuiz.CULTURE_GENERAL);
+			generateGameProperInterface(title);
 		}
-		private void generatePaysCapitalQuiz() {
-			
+		private void generatePaysCapitalQuiz(String title) {
+			questionnaire=quizManager.readQuestionnaire(TypeQuiz.PAYS_CAPITAL);
+			generateGameProperInterface(title);
 		}		
 		private void customizeFrame(JFrame frame,String title,int x,int y,FrameClosing closing ) {
 			frame.setTitle(title);
@@ -470,4 +417,303 @@ public class Application extends JWindow{
 			panel.setBackground(background);	
 			return panel;
 		}
+        private void doYouWantToStartGame(String title) {
+        	customizeFrame(startOrNot,title,600,400,FrameClosing.DISPOSE);
+			JMenuBar menuBar = new JMenuBar();
+			JMenu menu = new JMenu("Jeu");
+			for(Gaming name:game) {
+				JMenuItem item = new JMenuItem(name.toString());
+				menu.add(item);
+			}
+			menuBar.add(menu);
+			startOrNot.setJMenuBar(menuBar);
+			JPanel panelContainer=customizeJPanel(new BorderLayout(),null);
+			JPanel topPanel =createGameTopPanel("QUIZ - "+quiz.getType());
+			panelContainer.add(topPanel,BorderLayout.NORTH);
+			JPanel  middlePanel = customizeJPanel(new GridLayout(3,1,50,50),Color.white);
+			JButton btn = customizeButton("COMMENCER",new Dimension(200,50),new Font("Verdana",Font.BOLD,15),new Color(0,255,0),Color.white);
+			JPanel btnPanel =customizeJPanel(new FlowLayout(FlowLayout.CENTER),Color.white);
+			JLabel intro = customizeJLabel("Appuyez sur ce bouton pour commencer!",new Font("Unbuntu",Font.BOLD,25),new Color(255,255,0));
+			btnPanel.add(btn);
+			middlePanel.add(intro);
+			middlePanel.add(btnPanel);
+			panelContainer.add(middlePanel);
+			startOrNot.add(panelContainer);
+			startOrNot.setVisible(true);
+            
+			//EVENEMENTS
+			
+			btn.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					startOrNot.dispose();
+					switch(quiz.getType()) {
+					case MATH:generateMathQuiz(title);
+					     break;
+					case CULTURE_GENERAL:generateGeneralCultureQuiz(title);
+					     break;
+					case PAYS_CAPITAL:generatePaysCapitalQuiz(title);
+					    break;
+					default:jp.showMessageDialog(choosePresentation, "Veillez choisir un mode de jeu");
+					}
+				}
+				
+			});
+        }
+		private void generateGameProperInterface(String title) {
+			customizeFrame(quizInterface,title,600,400,FrameClosing.DISPOSE);
+			JMenuBar menuBar = new JMenuBar();
+			JMenu menu = new JMenu("Jeu");
+			for(Gaming name:game) {
+				JMenuItem item = new JMenuItem(name.toString());
+				menu.add(item);
+			}
+			menuBar.add(menu);
+			quizInterface.setJMenuBar(menuBar);
+			JPanel panelContainer=customizeJPanel(new BorderLayout(),null);
+			JPanel topPanel =createGameTopPanel("QUIZ - "+quiz.getType().toString());
+			panelContainer.add(topPanel,BorderLayout.NORTH);
+			JPanel  middlePanel = customizeJPanel(new BorderLayout(),null);
+			JPanel mainPanel = customizeJPanel(new BorderLayout(),Color.WHITE);
+			JPanel timerPanel = customizeJPanel(new BorderLayout(),new Color(255,200,18));
+			JPanel panCounterName = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(255,200,18));
+			JLabel counterName = customizeJLabel("Temps restant",new Font("Arial",Font.BOLD,20),new Color(255,255,255));
+			JLabel counter = customizeJLabel("10s",new Font("Verdana",Font.BOLD,15),new Color(255,0,0));
+			JPanel panCounter = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(255,200,18));
+			panCounterName.add(counterName);
+			panCounterName.add(counterName);
+			panCounter.add(counter);
+			timerPanel.add(panCounterName,BorderLayout.NORTH);
+			timerPanel.add(panCounter,BorderLayout.CENTER);
+			JPanel mainPanelNorth = customizeJPanel(new FlowLayout(FlowLayout.CENTER,10,10),Color.WHITE);
+			JPanel mainPanelSouth =customizeJPanel(new GridLayout(1,2),null);
+			JPanel mainPanelCenter = new JPanel();
+			mainPanelCenter.setBackground(Color.WHITE);
+			 JTextArea question =new JTextArea("");
+				JLabel numQuestion = customizeJLabel("",new Font("Unbuntu",Font.BOLD,24),Color.BLUE);
+				JLabel nomQuestion = customizeJLabel("",new Font("Unbuntu",Font.BOLD,24),Color.BLUE);
+			question.setBorder(null);
+	        question.setFont(new Font("Arial",Font.BOLD,15));
+			question.setEditable(false);
+			mainPanelCenter.add(question);
+			//JScrollPane jscrp =new JScrollPane(mainPanelCenter);
+			
+			mainPanelNorth.add(nomQuestion);
+			mainPanelNorth.add(numQuestion);
+			JTextField textField = new JTextField();
+			JButton valider = customizeButton("Valider",new Dimension(100,35),new Font("Verdana",Font.BOLD,10),new Color(253,151,31),Color.white);
+			textField.setPreferredSize(new Dimension(250,35));
+			textField.setBackground(new Color(250,250,250));
+			mainPanelSouth.add(textField);
+			mainPanelSouth.add(valider);
+			mainPanel.add(mainPanelNorth,BorderLayout.NORTH);
+			mainPanel.add(mainPanelCenter,BorderLayout.CENTER);
+			mainPanel.add(mainPanelSouth,BorderLayout.SOUTH);
+			middlePanel.add(timerPanel,BorderLayout.WEST);
+			middlePanel.add(mainPanel,BorderLayout.CENTER);
+			JPanel scorePanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER,10,10),new Color(255,128,0));
+			JLabel scoreName = customizeJLabel("Score: ",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,0));
+			JLabel score = customizeJLabel("0",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,128));
+			scorePanel.add(scoreName);
+			scorePanel.add(score);
+			panelContainer.add(middlePanel,BorderLayout.CENTER);
+			panelContainer.add(scorePanel,BorderLayout.SOUTH);
+			quizInterface.add(panelContainer);
+			
+			//EVENEMENTS
+			valider.addMouseListener(new MouseAdapter() {
+				public void mouseEntered(MouseEvent e) {
+					valider.setBackground(new Color(0,255,0));
+					valider.setForeground(Color.WHITE);
+				}
+				public void mouseExited(MouseEvent e) {
+					valider.setBackground(new Color(253,151,31));
+					valider.setForeground(Color.WHITE);
+				}
+			});
+			ArrayList<String> questions = new ArrayList<String>(questionnaire.keySet());
+			
+			Timer timer3 =new Timer(1000,new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					timeCount++;
+					System.out.println(increment);
+					counter.setText((10-timeCount)+" s");
+					if(increment>=11) {
+						((Timer)e.getSource()).stop();
+						 numQuestion.setText("");
+						 question.setText("");
+						 nomQuestion.setText("");
+						 score.setText("0");
+					}
+				}
+            	 
+             });				 
+			Timer timer = new Timer(10000,new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					 if(increment>=10) {
+						 ((Timer)e.getSource()).stop();
+						 numQuestion.setText("");
+						 question.setText("");
+						 nomQuestion.setText("");
+						 timer3.stop();
+						 score.setText("0");
+						 afterGame("Le choix");
+						 
+					 }else {
+						 gameLogiq(question, numQuestion,nomQuestion, questions);
+						 int aleatoire=questions.size();
+						 Application.this.stockQuestion=questions.get(rd.nextInt(aleatoire));
+						 question.setText(stockQuestion);
+				 		 questions.remove(stockQuestion); 
+				 		 nomQuestion.setText("Question");
+					 }	
+				}
+			});
+			timer.start();
+			timer3.start();
+			increment = 1;
+			numQuestion.setText(increment+"");
+			nomQuestion.setText("Question");
+			stockQuestion=questions.get(rd.nextInt(questions.size()));
+			question.setText(stockQuestion);
+			timeStartGame=System.currentTimeMillis();
+			 valider.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent arg0) {
+						if(increment >= 10) {
+							 numQuestion.setText("");
+							 question.setText("");
+							 nomQuestion.setText("");
+							 timer.stop();
+							 timer3.stop();
+							 score.setText("0");
+						 }
+						 if(textField.getText().equalsIgnoreCase(questionnaire.get(stockQuestion))) {
+						 		if(verScore!=0 && increment<11) {
+						 			scoreGame++;
+						 			verScore=0;
+							 		score.setText(""+scoreGame);
+							 		textField.setText("");	
+							 		gameLogiq(question, numQuestion,nomQuestion, questions);
+							 		 int aleatoire=questions.size();
+							 		 questions.remove(stockQuestion);
+									 Application.this.stockQuestion=questions.get(rd.nextInt(aleatoire));
+									 question.setText(stockQuestion);
+							 		 
+							 		 timer.restart();
+						 		}
+						 		if(increment>=11) {
+						 			 numQuestion.setText("");
+									 question.setText("");
+									 nomQuestion.setText("");
+						 			 timer.stop();
+									 timer3.stop();
+									 score.setText("0");
+						 			 afterGame("Le choix");
+						 		}
+						 }
+						 else{
+						 		verScore=0;
+						 		JOptionPane.showMessageDialog(null, "C'est faux, la reponse est "+questionnaire.get(stockQuestion)+"\nVous avez dit "+textField.getText())  ;
+								textField.setText("");
+	                            gameLogiq(question, numQuestion, nomQuestion,questions);
+	                            int aleatoire=questions.size();
+	                            questions.remove(stockQuestion); 
+	                            Application.this.stockQuestion=questions.get(rd.nextInt(aleatoire));
+								question.setText(stockQuestion);
+	                             timer.restart();
+	                             if(increment>=11) {
+	                            	 numQuestion.setText("");
+	    							 question.setText("");
+	    							 nomQuestion.setText("");
+	                            	 timer.stop();
+	    							 timer3.stop();
+	    							 score.setText("0"); 
+						 			 afterGame("Le choix");
+						 		}
+						 }
+	                }
+               });
+			 quizInterface.setVisible(true);
+		}
+		private void gameLogiq(JTextArea question, JLabel numQuestion,JLabel nomQuestion, ArrayList<String> questions) {
+			if(increment<11) {
+				 timeCount=0; 
+				 increment++;
+				 verScore=-1;
+				 numQuestion.setText(increment+"");
+				 nomQuestion.setText("Question");
+              }
+			else {
+				 numQuestion.setText("");
+				 question.setText("");
+				 nomQuestion.setText("");
+				 numQuestion.setText("");
+				 
+			}
+	
+			 
+		}
+		
+		private void afterGame() {
+			JOptionPane.showMessageDialog(null, "\tPARTIE TERMINEE\n"
+			 		                            + "Vous avez terminé la partie dans environ "+(System.currentTimeMillis()-timeStartGame)+" s.\n"
+			 		                              +"     Votre score : "+scoreGame+" points");
+			 int rep=JOptionPane.showConfirmDialog(null,"Rejouer?","Voulez vous rejouez une partie?",JOptionPane.YES_NO_OPTION);
+			 if(rep==JOptionPane.YES_OPTION) {
+				 createSoloQuiz(quizInterface);
+			 }
+			 else {
+				rep=JOptionPane.showConfirmDialog(null,"Men Principal?","Retourner au menu principal",JOptionPane.YES_NO_OPTION); 
+				if(rep==JOptionPane.YES_OPTION) {
+					createGamePresentation();
+				 }
+				else {
+					quizInterface.dispose();
+				}
+			 }
+		}
+		private void afterGame(String title) {
+			JOptionPane.showMessageDialog(null, "\tPARTIE TERMINEE\n"
+                     + "Vous avez terminé la partie dans environ "+(System.currentTimeMillis()-timeStartGame)/1000+" s.\n"
+                       +"             Votre score : "+scoreGame+" points");
+			customizeFrame(afterGaming,title,300,200,FrameClosing.NOTHING);
+			JPanel topPanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(253,151,31)); 
+	 		JPanel panelContainer=customizeJPanel(new BorderLayout(),null); 
+			JLabel topLabel = customizeJLabel("Que voulez vous faire?",new Font("Tahoma",Font.HANGING_BASELINE,20),new Color(0,0,0));
+	        topPanel.add(topLabel);
+	        JPanel middlePanel = customizeJPanel(new GridLayout(3,1,10,10),new Color(255,200,18));
+	        HashMap<AfterGaming,JButton> bouton = new HashMap<AfterGaming,JButton>();
+	        for(AfterGaming afterGamingPlay:afterGamingButtons) {
+				JButton choice = customizeButton(afterGamingPlay.toString(),null,new Font("Verdana",Font.BOLD,20),new Color(255,255,255),new Color(0,0,0));
+				choice.addMouseListener(new MouseAdapter() {
+					
+					@Override
+					public void mouseEntered(MouseEvent arg0) {
+						choice.setBackground(new Color(0,255,0));
+						choice.setForeground(new Color(255,255,255));
+					}
+					@Override
+					public void mouseExited(MouseEvent arg0) {
+						 choice.setBackground(new Color(255,255,255));
+						 choice.setForeground(new Color(0,0,0));			 
+					}
+				});
+				middlePanel.add(choice);
+				bouton.put(afterGamingPlay,choice);
+			}
+	        panelContainer.add(topPanel,BorderLayout.NORTH);
+	        panelContainer.add(middlePanel,BorderLayout.CENTER);
+	        afterGaming.add(panelContainer); 
+	        afterGaming.setVisible(true);
+	        //EVENEMENTS
+	        bouton.get(AfterGaming.REJOUER).addActionListener((event)->{afterGaming.dispose();quizInterface.dispose();increment=1;scoreGame=0;createSoloQuiz(quizInterface);});
+	        bouton.get(AfterGaming.MENU_PRINCIPAL).addActionListener((event)->{afterGaming.dispose();quizInterface.dispose();increment=1;createGamePresentation();});
+	        bouton.get(AfterGaming.QUITTER).addActionListener((event)->{afterGaming.dispose();quizInterface.dispose();});
+	        	
+		}
+		
+
 }
