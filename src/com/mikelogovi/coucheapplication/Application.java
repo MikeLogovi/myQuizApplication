@@ -43,37 +43,49 @@ import com.mikelogovi.couchemetier.QuizManager;
 import com.mikelogovi.couchemetier.TypePartie;
 import com.mikelogovi.couchemetier.TypeQuiz;
 public class Application extends JWindow{
-	    private Musique musique = new Musique(); 
-        JProgressBar jpgb = new JProgressBar();
-        private final String TITRE="QUIZ-APPLICATION";
-        int increment=0;
-        JOptionPane jp = new JOptionPane(); 
-        Panel panel = new Panel(); 
-        JFrame loadindPlayerWindow= new JFrame();
-        JFrame gamePresentation = new JFrame();
-        JFrame choosePresentation = new JFrame();
-        JFrame quizInterface = new JFrame();
-        JFrame startOrNot = new JFrame();
-        JFrame afterGaming = new JFrame();
-        JTextField utilisateur = new JTextField("",10);
-        JPasswordField motpass = new JPasswordField();
+		private JFrame loadindPlayerWindow= new JFrame();
+	    private JFrame gamePresentation = new JFrame();
+	    private JFrame choosePresentation = new JFrame();
+	    private JFrame quizInterface = new JFrame();
+	    private JFrame startOrNot = new JFrame();
+	    private JFrame afterGaming = new JFrame();
+	    
+	    private JLabel score = customizeJLabel("0",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,128));
+	    
+	    private Panel panel = new Panel();
+	    
+	    private JTextField utilisateur = new JTextField("",10);
+        private JPasswordField motpass = new JPasswordField();
+	   
+        private JOptionPane jp = new JOptionPane();
         
-
-        private Partie partie = new Partie();
-        private PartieManager partieManager = new PartieManager(); 
+        private JProgressBar jpgb = new JProgressBar();
+        private Musique musique = new Musique(); 
+       
         private Joueur joueur = new Joueur();
         private JoueurManager joueurManager= new JoueurManager();
+        
         private Quiz quiz = new Quiz();
         private QuizManager quizManager = new QuizManager();
+        
+        private Partie partie = new Partie();
+        private PartieManager partieManager = new PartieManager();
+        
+        private HashMap<String,String>questionnaire=new HashMap<String,String>();
+        
         private Gaming[] game= {Gaming.NOUVELLE_PARTIE,Gaming.CONTINUER_PARTIE,Gaming.CLASSEMENTS,Gaming.STATISTIQUES,Gaming.QUITTER};
         private AfterGaming[] afterGamingButtons= {AfterGaming.REJOUER,AfterGaming.MENU_PRINCIPAL,AfterGaming.QUITTER};
-        private HashMap<String,String>questionnaire=new HashMap<String,String>();
+        
+        private final String TITRE="QUIZ-APPLICATION";
+
+        private String stockQuestion;
         private Random rd = new Random();
         private int scoreGame=0;
-        private String stockQuestion;
         private int verScore=-1;
         private int timeCount;
+        private int increment=0;
         private long timeStartGame;
+       
         public Application() {
         	this.setSize(361,267);
         	this.setLocationRelativeTo(null);
@@ -146,7 +158,7 @@ public class Application extends JWindow{
 			panelContainer.add(pan2,BorderLayout.CENTER);
 			panelContainer.add(pan4,BorderLayout.EAST);
 			loadindPlayerWindow.add(panelContainer);
-			loadindPlayerWindow.setVisible(true);
+			//loadindPlayerWindow.setVisible(true);
 			//EVENT
 			/*.addMouseListener(new MouseAdapter() {
 				public void mouseClicked(MouseEvent e) {
@@ -251,7 +263,6 @@ public class Application extends JWindow{
 			panelContainer.add(topPanel,BorderLayout.NORTH);
 			panelContainer.add(middlePanel,BorderLayout.CENTER);
 			gamePresentation.add(panelContainer);
-			gamePresentation.setVisible(true);
 			//EVENEMENTS
 			gamePresentation.addWindowListener(new WindowAdapter() {
 				@SuppressWarnings("deprecation")
@@ -340,7 +351,6 @@ public class Application extends JWindow{
 		    	});
 		    }
 		    myBtn.get(TypePartie.SOLO).addActionListener((event)->createSoloQuiz(choosePresentation));
-		    choosePresentation.setVisible(true);
 		}
 		private JPanel createGameTopPanel(String title) {
 			JPanel topPanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(253,151,31)); 
@@ -381,6 +391,7 @@ public class Application extends JWindow{
 			}
 		    frame.setLocationRelativeTo(null);
 		    frame.setResizable(false);
+		    frame.setVisible(true);
 		}
 		private JLabel customizeJLabel(String title,Font font,Color color) {
 			JLabel label = new JLabel(title);
@@ -514,7 +525,7 @@ public class Application extends JWindow{
 			middlePanel.add(mainPanel,BorderLayout.CENTER);
 			JPanel scorePanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER,10,10),new Color(255,128,0));
 			JLabel scoreName = customizeJLabel("Score: ",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,0));
-			JLabel score = customizeJLabel("0",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,128));
+			
 			scorePanel.add(scoreName);
 			scorePanel.add(score);
 			panelContainer.add(middlePanel,BorderLayout.CENTER);
@@ -533,7 +544,11 @@ public class Application extends JWindow{
 				}
 			});
 			ArrayList<String> questions = new ArrayList<String>(questionnaire.keySet());
-			
+			increment = 1;
+			numQuestion.setText(increment+"");
+			nomQuestion.setText("Question");
+			stockQuestion=questions.get(rd.nextInt(questions.size()));
+			question.setText(stockQuestion);
 			Timer timer3 =new Timer(1000,new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -557,8 +572,8 @@ public class Application extends JWindow{
 						 numQuestion.setText("");
 						 question.setText("");
 						 nomQuestion.setText("");
-						 timer3.stop();
 						 score.setText("0");
+						 timer3.stop();
 						 afterGame("Le choix");
 						 
 					 }else {
@@ -573,70 +588,63 @@ public class Application extends JWindow{
 			});
 			timer.start();
 			timer3.start();
-			increment = 1;
-			numQuestion.setText(increment+"");
-			nomQuestion.setText("Question");
-			stockQuestion=questions.get(rd.nextInt(questions.size()));
-			question.setText(stockQuestion);
 			timeStartGame=System.currentTimeMillis();
 			 valider.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent arg0) {
 						if(increment >= 10) {
-							 numQuestion.setText("");
-							 question.setText("");
-							 nomQuestion.setText("");
-							 timer.stop();
-							 timer3.stop();
-							 score.setText("0");
+							 reinitializationAndStopTimer(question, numQuestion, nomQuestion, timer3, timer);
+							
 						 }
 						 if(textField.getText().equalsIgnoreCase(questionnaire.get(stockQuestion))) {
 						 		if(verScore!=0 && increment<11) {
-						 			scoreGame++;
-						 			verScore=0;
-							 		score.setText(""+scoreGame);
-							 		textField.setText("");	
-							 		gameLogiq(question, numQuestion,nomQuestion, questions);
-							 		 int aleatoire=questions.size();
-							 		 questions.remove(stockQuestion);
-									 Application.this.stockQuestion=questions.get(rd.nextInt(aleatoire));
-									 question.setText(stockQuestion);
-							 		 
-							 		 timer.restart();
+						 			 scoreGame++;
+						 			 score.setText(""+scoreGame);
+						 			 questionAndScoreLogiq(question, numQuestion, nomQuestion, textField, questions,
+											timer);
 						 		}
 						 		if(increment>=11) {
-						 			 numQuestion.setText("");
-									 question.setText("");
-									 nomQuestion.setText("");
-						 			 timer.stop();
-									 timer3.stop();
-									 score.setText("0");
-						 			 afterGame("Le choix");
+						 			 openAfterGamingInterface(question, numQuestion, nomQuestion, timer3, timer);
 						 		}
 						 }
 						 else{
-						 		verScore=0;
-						 		JOptionPane.showMessageDialog(null, "C'est faux, la reponse est "+questionnaire.get(stockQuestion)+"\nVous avez dit "+textField.getText())  ;
-								textField.setText("");
-	                            gameLogiq(question, numQuestion, nomQuestion,questions);
-	                            int aleatoire=questions.size();
-	                            questions.remove(stockQuestion); 
-	                            Application.this.stockQuestion=questions.get(rd.nextInt(aleatoire));
-								question.setText(stockQuestion);
-	                             timer.restart();
+							 JOptionPane.showMessageDialog(null, "C'est faux, la reponse est "+questionnaire.get(stockQuestion)+"\nVous avez dit "+textField.getText())  ;
+							 questionAndScoreLogiq(question, numQuestion, nomQuestion, textField, questions,
+										timer);
 	                             if(increment>=11) {
-	                            	 numQuestion.setText("");
-	    							 question.setText("");
-	    							 nomQuestion.setText("");
-	                            	 timer.stop();
-	    							 timer3.stop();
-	    							 score.setText("0"); 
-						 			 afterGame("Le choix");
+	                            	 openAfterGamingInterface(question, numQuestion, nomQuestion, timer3, timer);
 						 		}
 						 }
 	                }
+
+					private void questionAndScoreLogiq(JTextArea question, JLabel numQuestion, JLabel nomQuestion,
+						 JTextField textField, ArrayList<String> questions, Timer timer) {
+						 verScore=0;
+						 textField.setText("");	
+						 gameLogiq(question, numQuestion,nomQuestion, questions);
+						 int aleatoire=questions.size();
+						 questions.remove(stockQuestion);
+						 Application.this.stockQuestion=questions.get(rd.nextInt(aleatoire));
+						 question.setText(stockQuestion);						 		 
+						 timer.restart();
+					}
+
+					private void openAfterGamingInterface(JTextArea question, JLabel numQuestion, JLabel nomQuestion,
+							Timer timer3, Timer timer) {
+						reinitializationAndStopTimer(question, numQuestion, nomQuestion, timer3, timer);								 
+						 afterGame("Le choix");
+					}
+
+					private void reinitializationAndStopTimer(JTextArea question, JLabel numQuestion,
+							JLabel nomQuestion, Timer timer3, Timer timer) {
+						reinitializeQuiz(question, numQuestion, nomQuestion);
+						 timer.stop();
+						 timer3.stop();
+					}
+
+					
                });
-			 quizInterface.setVisible(true);
+			
 		}
 		private void gameLogiq(JTextArea question, JLabel numQuestion,JLabel nomQuestion, ArrayList<String> questions) {
 			if(increment<11) {
@@ -647,16 +655,17 @@ public class Application extends JWindow{
 				 nomQuestion.setText("Question");
               }
 			else {
-				 numQuestion.setText("");
-				 question.setText("");
-				 nomQuestion.setText("");
-				 numQuestion.setText("");
-				 
+				reinitializeQuiz(question, numQuestion, nomQuestion);
 			}
 	
 			 
 		}
-		
+		private void reinitializeQuiz(JTextArea question, JLabel numQuestion, JLabel nomQuestion) {
+			 numQuestion.setText("");
+			 question.setText("");
+			 nomQuestion.setText("");
+			 score.setText("0");
+		}
 		private void afterGame() {
 			JOptionPane.showMessageDialog(null, "\tPARTIE TERMINEE\n"
 			 		                            + "Vous avez terminé la partie dans environ "+(System.currentTimeMillis()-timeStartGame)+" s.\n"
@@ -707,7 +716,7 @@ public class Application extends JWindow{
 	        panelContainer.add(topPanel,BorderLayout.NORTH);
 	        panelContainer.add(middlePanel,BorderLayout.CENTER);
 	        afterGaming.add(panelContainer); 
-	        afterGaming.setVisible(true);
+	       
 	        //EVENEMENTS
 	        bouton.get(AfterGaming.REJOUER).addActionListener((event)->{afterGaming.dispose();quizInterface.dispose();increment=1;scoreGame=0;createSoloQuiz(quizInterface);});
 	        bouton.get(AfterGaming.MENU_PRINCIPAL).addActionListener((event)->{afterGaming.dispose();quizInterface.dispose();increment=1;createGamePresentation();});
