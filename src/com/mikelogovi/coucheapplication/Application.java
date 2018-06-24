@@ -51,7 +51,7 @@ public class Application extends JWindow{
 	    private JFrame afterGaming = new JFrame();
 	    
 	    private JLabel score = customizeJLabel("0",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,128));
-	    
+	    private JLabel scorePlayer2 = customizeJLabel("0",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,128));
 	    private Panel panel = new Panel();
 	    
 	    private JTextField utilisateur = new JTextField("",10);
@@ -63,6 +63,7 @@ public class Application extends JWindow{
         private Musique musique = new Musique(); 
        
         private Joueur joueur = new Joueur();
+      
         private JoueurManager joueurManager= new JoueurManager();
         
         private Quiz quiz = new Quiz();
@@ -81,9 +82,11 @@ public class Application extends JWindow{
         private String stockQuestion;
         private Random rd = new Random();
         private int scoreGame=0;
+        private int scoreGamePlayer2=0;
         private int verScore=-1;
         private int timeCount;
         private int increment=0;
+        private int tourJoueur=1;
         private long timeStartGame;
        
         public Application() {
@@ -351,83 +354,10 @@ public class Application extends JWindow{
 		    	});
 		    }
 		    myBtn.get(TypePartie.SOLO).addActionListener((event)->createSoloQuiz(choosePresentation));
-		}
-		private JPanel createGameTopPanel(String title) {
-			JPanel topPanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(253,151,31)); 
-			JLabel topTitle = new JLabel(title);
-			topTitle.setFont(new Font("Tahoma",Font.HANGING_BASELINE,48));
-			topPanel.add(topTitle);
-			return topPanel;
+		    myBtn.get(TypePartie.DUEL).addActionListener((event)->createDuelQuiz(choosePresentation));
+		    myBtn.get(TypePartie.EN_EQUIPE).addActionListener((event)->createEnEquipeQuiz(choosePresentation));
 		}
 		
-		private void createSoloQuiz(JFrame frame) {
-			frame.dispose();
-            gamePresentation.dispose();
-			partie.setTypePartie(TypePartie.SOLO);
-			String title="Quiz-"+quiz.getType().toString()+"-"+partie.getTypePartie().toString();
-			doYouWantToStartGame(title);
-		}
-		private void  generateMathQuiz(String title) {
-		    questionnaire=quizManager.readQuestionnaire(TypeQuiz.MATH);
-		    generateGameProperInterface(title);
-		}
-		private void generateGeneralCultureQuiz(String title) {
-			questionnaire=quizManager.readQuestionnaire(TypeQuiz.CULTURE_GENERAL);
-			generateGameProperInterface(title);
-		}
-		private void generatePaysCapitalQuiz(String title) {
-			questionnaire=quizManager.readQuestionnaire(TypeQuiz.PAYS_CAPITAL);
-			generateGameProperInterface(title);
-		}		
-		private void customizeFrame(JFrame frame,String title,int x,int y,FrameClosing closing ) {
-			frame.setTitle(title);
-			frame.setSize(x,y);
-			switch(closing) {
-			case DISPOSE:frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			     break;
-			case EXIT:frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		  	     break;
-			case NOTHING:frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-			}
-		    frame.setLocationRelativeTo(null);
-		    frame.setResizable(false);
-		    frame.setVisible(true);
-		}
-		private JLabel customizeJLabel(String title,Font font,Color color) {
-			JLabel label = new JLabel(title);
-			label.setFont(font);
-			label.setForeground(color);
-			return label;
-		}
-		private JButton customizeButton(String title,Dimension dimension,Font font,Color background,Color foreground) {
-			JButton bouton = new JButton(title);
-			bouton.setPreferredSize(dimension);
-			bouton.setFont(font);
-			bouton.setBackground(background);
-			bouton.setForeground(foreground);
-			return bouton;
-		}
-		private JPanel customizeJPanel(BorderLayout layout,Color background) {
-			return setPanelCustomization( layout, background);
-		}
-		private JPanel customizeJPanel(FlowLayout layout,Color background) {		
-			return setPanelCustomization( layout, background);
-		}
-		private JPanel customizeJPanel(GridLayout layout,Color background) {	
-			return setPanelCustomization( layout, background);
-		}
-		private JPanel setPanelCustomization(Object layout,Color background) {
-			JPanel panel = new JPanel();
-			switch(layout.getClass()+"") {
-			  case "class java.awt.BorderLayout":panel.setLayout((BorderLayout)layout);
-			       break;
-			  case "class java.awt.FlowLayout":panel.setLayout((FlowLayout)layout);
-                   break;
-			  case "class java.awt.GridLayout":panel.setLayout((GridLayout)layout);
-			}
-			panel.setBackground(background);	
-			return panel;
-		}
         private void doYouWantToStartGame(String title) {
         	customizeFrame(startOrNot,title,600,400,FrameClosing.DISPOSE);
 			JMenuBar menuBar = new JMenuBar();
@@ -450,7 +380,6 @@ public class Application extends JWindow{
 			middlePanel.add(btnPanel);
 			panelContainer.add(middlePanel);
 			startOrNot.add(panelContainer);
-			startOrNot.setVisible(true);
             
 			//EVENEMENTS
 			
@@ -523,11 +452,19 @@ public class Application extends JWindow{
 			mainPanel.add(mainPanelSouth,BorderLayout.SOUTH);
 			middlePanel.add(timerPanel,BorderLayout.WEST);
 			middlePanel.add(mainPanel,BorderLayout.CENTER);
-			JPanel scorePanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER,10,10),new Color(255,128,0));
-			JLabel scoreName = customizeJLabel("Score: ",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,0));
+			JPanel scorePanel = null;
 			
-			scorePanel.add(scoreName);
-			scorePanel.add(score);
+			JLabel scoreName = customizeJLabel("  Score: ",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,0));
+			JLabel scoreName2 = customizeJLabel("Score: ",new Font("URW Bookman L",Font.BOLD,30),new Color(255,255,0));
+			switch(partie.getTypePartie()) {
+			   case SOLO:
+			   case EN_EQUIPE: scorePanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER,10,10),new Color(255,128,0));
+				               scorePanel.add(scoreName);scorePanel.add(score);
+			              break;
+			   case DUEL: scorePanel = customizeJPanel(new GridLayout(1,4,20,20),new Color(255,128,0));
+			              scorePanel.add(scoreName);scorePanel.add(score);scorePanel.add(scoreName2);scorePanel.add(scorePlayer2);
+			              break;
+			}
 			panelContainer.add(middlePanel,BorderLayout.CENTER);
 			panelContainer.add(scorePanel,BorderLayout.SOUTH);
 			quizInterface.add(panelContainer);
@@ -549,12 +486,21 @@ public class Application extends JWindow{
 			nomQuestion.setText("Question");
 			stockQuestion=questions.get(rd.nextInt(questions.size()));
 			question.setText(stockQuestion);
+			switch(partie.getTypePartie()) {
+			case DUEL:
+			case EN_EQUIPE:JOptionPane.showMessageDialog(null, "C'est le tour du joueur 1");
+			               break;
+			}
 			Timer timer3 =new Timer(1000,new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
+					
 					timeCount++;
 					System.out.println(increment);
-					counter.setText((10-timeCount)+" s");
+					if(timeCount>10)counter.setText("0 s");
+					else{
+						counter.setText((10-timeCount)+" s");
+					}
 					if(increment>=11) {
 						((Timer)e.getSource()).stop();
 						 numQuestion.setText("");
@@ -567,7 +513,8 @@ public class Application extends JWindow{
              });				 
 			Timer timer = new Timer(10000,new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					 if(increment>=10) {
+					
+					if(increment>=10) {
 						 ((Timer)e.getSource()).stop();
 						 numQuestion.setText("");
 						 question.setText("");
@@ -577,6 +524,19 @@ public class Application extends JWindow{
 						 afterGame("Le choix");
 						 
 					 }else {
+						 switch(partie.getTypePartie()) {
+							case EN_EQUIPE:
+							case DUEL:if(tourJoueur==-1) {
+								         tourJoueur*=-1;
+										 JOptionPane.showMessageDialog(null, "C'est le tour du joueur 1");
+										
+							         }
+							         else {
+									     JOptionPane.showMessageDialog(null, "C'est le tour du joueur 2");							 
+										 tourJoueur*=-1;
+							          }
+							          break;
+							}
 						 gameLogiq(question, numQuestion,nomQuestion, questions);
 						 int aleatoire=questions.size();
 						 Application.this.stockQuestion=questions.get(rd.nextInt(aleatoire));
@@ -597,10 +557,18 @@ public class Application extends JWindow{
 							
 						 }
 						 if(textField.getText().equalsIgnoreCase(questionnaire.get(stockQuestion))) {
-						 		if(verScore!=0 && increment<11) {
-						 			 scoreGame++;
-						 			 score.setText(""+scoreGame);
-						 			 questionAndScoreLogiq(question, numQuestion, nomQuestion, textField, questions,
+						 		if(verScore!=0 && increment<11){
+						 			 switch(partie.getTypePartie()){
+						 			   case DUEL: if(tourJoueur==-1) {
+					              			           scoreGamePlayer2++;scorePlayer2.setText(""+scoreGamePlayer2);
+										            }
+										           else {
+										               scoreGame++;score.setText(""+scoreGame);						 
+										            }
+                                            break;
+						 			   default:scoreGame++;score.setText(""+scoreGame);
+						 			 }
+						 			questionAndScoreLogiq(question, numQuestion, nomQuestion, textField, questions,
 											timer);
 						 		}
 						 		if(increment>=11) {
@@ -608,12 +576,14 @@ public class Application extends JWindow{
 						 		}
 						 }
 						 else{
-							 JOptionPane.showMessageDialog(null, "C'est faux, la reponse est "+questionnaire.get(stockQuestion)+"\nVous avez dit "+textField.getText())  ;
-							 questionAndScoreLogiq(question, numQuestion, nomQuestion, textField, questions,
-										timer);
+							 JOptionPane.showMessageDialog(null, "C'est faux, la reponse est "+questionnaire.get(stockQuestion)+"\nVous avez dit "+textField.getText());
 	                             if(increment>=11) {
 	                            	 openAfterGamingInterface(question, numQuestion, nomQuestion, timer3, timer);
 						 		}
+	                             else {
+	                            	 questionAndScoreLogiq(question, numQuestion, nomQuestion, textField, questions,
+	 										timer); 
+	                             }
 						 }
 	                }
 
@@ -627,6 +597,18 @@ public class Application extends JWindow{
 						 Application.this.stockQuestion=questions.get(rd.nextInt(aleatoire));
 						 question.setText(stockQuestion);						 		 
 						 timer.restart();
+						 switch(partie.getTypePartie()) {
+							case EN_EQUIPE:
+							case DUEL:if(tourJoueur==-1) {
+						          tourJoueur*=-1;
+					                 JOptionPane.showMessageDialog(null, "C'est le tour du joueur 1");							 
+						            }
+						           else {
+						        	   tourJoueur*=-1;
+						               JOptionPane.showMessageDialog(null, "C'est le tour du joueur 2");							  
+						           }
+							       break; 
+							}
 					}
 
 					private void openAfterGamingInterface(JTextArea question, JLabel numQuestion, JLabel nomQuestion,
@@ -666,6 +648,7 @@ public class Application extends JWindow{
 			 nomQuestion.setText("");
 			 score.setText("0");
 		}
+		
 		private void afterGame() {
 			JOptionPane.showMessageDialog(null, "\tPARTIE TERMINEE\n"
 			 		                            + "Vous avez terminé la partie dans environ "+(System.currentTimeMillis()-timeStartGame)+" s.\n"
@@ -685,9 +668,18 @@ public class Application extends JWindow{
 			 }
 		}
 		private void afterGame(String title) {
-			JOptionPane.showMessageDialog(null, "\tPARTIE TERMINEE\n"
-                     + "Vous avez terminé la partie dans environ "+(System.currentTimeMillis()-timeStartGame)/1000+" s.\n"
-                       +"             Votre score : "+scoreGame+" points");
+			switch(partie.getTypePartie()) {
+			case DUEL: JOptionPane.showMessageDialog(null, "\tPARTIE TERMINEE\n"
+                    + "\tJoueur1 a un score de: "+scoreGame+" points");
+			           JOptionPane.showMessageDialog(null, "\tPARTIE TERMINEE\n"
+                    + "\tJoueur2 a un score de: "+scoreGamePlayer2+" points");
+				break;
+			default:JOptionPane.showMessageDialog(null, "\tPARTIE TERMINEE\n"
+                    + "Vous avez terminé la partie dans environ "+(System.currentTimeMillis()-timeStartGame)/1000+" s.\n"
+                    +"             Votre score : "+scoreGame+" points");
+			    break;
+			}
+			
 			customizeFrame(afterGaming,title,300,200,FrameClosing.NOTHING);
 			JPanel topPanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(253,151,31)); 
 	 		JPanel panelContainer=customizeJPanel(new BorderLayout(),null); 
@@ -723,6 +715,108 @@ public class Application extends JWindow{
 	        bouton.get(AfterGaming.QUITTER).addActionListener((event)->{afterGaming.dispose();quizInterface.dispose();});
 	        	
 		}
+		
+		
+		
+		               //METHODES SUR LES TYPES DE PARTIES (SOLO,DUEL,EQUIPE)
+	/*-------------------------------------------------------------------------------------------------------*/	
+		private void createSoloQuiz(JFrame frame) {
+			partie.setTypePartie(TypePartie.SOLO);
+			creatingQuizInitialization(frame);
+		}
+		private void createDuelQuiz(JFrame frame) {
+			partie.setTypePartie(TypePartie.DUEL);
+			creatingQuizInitialization(frame);
+		}
+		private void createEnEquipeQuiz(JFrame frame) {
+			partie.setTypePartie(TypePartie.EN_EQUIPE);
+			creatingQuizInitialization(frame);
+		}
+		private void creatingQuizInitialization(JFrame frame) {
+			frame.dispose();
+			gamePresentation.dispose();
+			doYouWantToStartGame("Quiz-"+quiz.getType().toString()+"-"+partie.getTypePartie().toString());
+		}
+	/*-------------------------------------------------------------------------------------------------------*/	
+	 
+		                //METHODES SUR LES TYPES DE QUIZ	
+	/*-------------------------------------------------------------------------------------------------------*/	
+		private void  generateMathQuiz(String title) {
+		    questionnaire=quizManager.readQuestionnaire(TypeQuiz.MATH);
+		    generateGameProperInterface(title);
+		}
+		private void generateGeneralCultureQuiz(String title) {
+			questionnaire=quizManager.readQuestionnaire(TypeQuiz.CULTURE_GENERAL);
+			generateGameProperInterface(title);
+		}
+		private void generatePaysCapitalQuiz(String title) {
+			questionnaire=quizManager.readQuestionnaire(TypeQuiz.PAYS_CAPITAL);
+			generateGameProperInterface(title);
+		}
+		
+	/*---------------------------------------------------------------------------------------------------------*/
+		
+	                               //METHODES UTILITAIRES
+	 /*--------------------------------------------------------------------------------------------------*/	
+		private JPanel createGameTopPanel(String title) {
+			JPanel topPanel = customizeJPanel(new FlowLayout(FlowLayout.CENTER),new Color(253,151,31)); 
+			JLabel topTitle = new JLabel(title);
+			topTitle.setFont(new Font("Tahoma",Font.HANGING_BASELINE,48));
+			topPanel.add(topTitle);
+			return topPanel;
+		}
+		
+		private void customizeFrame(JFrame frame,String title,int x,int y,FrameClosing closing ) {
+			frame.setTitle(title);
+			frame.setSize(x,y);
+			switch(closing) {
+			case DISPOSE:frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			     break;
+			case EXIT:frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		  	     break;
+			case NOTHING:frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+			}
+		    frame.setLocationRelativeTo(null);
+		    frame.setResizable(false);
+		    frame.setVisible(true);
+		}
+		private JLabel customizeJLabel(String title,Font font,Color color) {
+			JLabel label = new JLabel(title);
+			label.setFont(font);
+			label.setForeground(color);
+			return label;
+		}
+		private JButton customizeButton(String title,Dimension dimension,Font font,Color background,Color foreground) {
+			JButton bouton = new JButton(title);
+			bouton.setPreferredSize(dimension);
+			bouton.setFont(font);
+			bouton.setBackground(background);
+			bouton.setForeground(foreground);
+			return bouton;
+		}
+		private JPanel customizeJPanel(BorderLayout layout,Color background) {
+			return setPanelCustomization( layout, background);
+		}
+		private JPanel customizeJPanel(FlowLayout layout,Color background) {		
+			return setPanelCustomization( layout, background);
+		}
+		private JPanel customizeJPanel(GridLayout layout,Color background) {	
+			return setPanelCustomization( layout, background);
+		}
+		private JPanel setPanelCustomization(Object layout,Color background) {
+			JPanel panel = new JPanel();
+			switch(layout.getClass()+"") {
+			  case "class java.awt.BorderLayout":panel.setLayout((BorderLayout)layout);
+			       break;
+			  case "class java.awt.FlowLayout":panel.setLayout((FlowLayout)layout);
+                   break;
+			  case "class java.awt.GridLayout":panel.setLayout((GridLayout)layout);
+			}
+			panel.setBackground(background);	
+			return panel;
+		}
+		
+	/*----------------------------------------------------------------------------------------------------------------------------*/	
 		
 
 }
